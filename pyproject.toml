@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Reproducibility toolkit for the Noetiko Convergence trilogy (Papers I–III): operational phase-coordination, surrogates, and switching statistics."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = {file = "LICENSE.txt"}
 authors = [
   {name = "Andre Kappe", email = "andre.kappe@noetiko.tech"},
 ]
