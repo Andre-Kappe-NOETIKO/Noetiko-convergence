@@ -1,9 +1,11 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Tuple
-
-import numpy as np
+--- a/src/noetiko_convergence/switching.py
++++ b/src/noetiko_convergence/switching.py
+@@ -1,6 +1,4 @@
+ from __future__ import annotations
+ 
+-from typing import Tuple
+-
+ import numpy as np
 
 
 @dataclass(frozen=True)
