@@ -1,8 +1,12 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-
-import numpy as np
+--- a/src/noetiko_convergence/phase.py
++++ b/src/noetiko_convergence/phase.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ from dataclasses import dataclass
++from typing import Optional, Tuple
+ 
+ import numpy as np
 from scipy.signal import hilbert, butter, filtfilt
 
 
