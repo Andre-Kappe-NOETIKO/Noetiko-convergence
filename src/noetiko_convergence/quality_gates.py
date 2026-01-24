@@ -1,61 +1,64 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import numpy as np
 
 
-@dataclass(frozen=True)
-class QualityGateResult:
-    passed: np.ndarray  # bool mask per window
-    rejection_rate: float
-
-
-def windowed_snr_gate(
-    amplitude: np.ndarray,
-    window_size: int,
-    amp_threshold: float,
-) -> QualityGateResult:
-    """Amplitude/SNR proxy gate using analytic amplitude.
-
-    Parameters
-    ----------
-    amplitude : np.ndarray
-        Analytic amplitude shaped (n_channels, n_samples).
-    window_size : int
-        Window size in samples.
-    amp_threshold : float
-        Threshold on median amplitude (per window) to accept.
-
-    Returns
-    -------
-    QualityGateResult:
-        passed: bool array (n_windows,)
-        rejection_rate: fraction rejected.
+def spectral_gate(X: np.ndarray, fs: float, f_lo: float, f_hi: float) -> bool:
     """
-    amp = np.asarray(amplitude, dtype=float)
-    if amp.ndim != 2:
-        raise ValueError("amplitude must be 2D (channels x samples).")
-    n = amp.shape[-1]
-    if window_size <= 0 or window_size > n:
-        raise ValueError("Invalid window_size.")
-    n_windows = n // window_size
-    if n_windows < 1:
-        raise ValueError("Not enough samples for one window.")
+    Minimal spectral gate: checks if there is non-trivial power in a band.
+    This is intentionally conservative and should be refined per dataset.
+    """
+    X = np.asarray(X, dtype=float)
+    if X.ndim != 2:
+        raise ValueError("X must be (T, N)")
 
-    passed = np.zeros(n_windows, dtype=bool)
-    for w in range(n_windows):
-        sl = slice(w*window_size, (w+1)*window_size)
-        # median across time then channels
-        m = np.median(amp[:, sl])
-        passed[w] = bool(m >= amp_threshold)
+    T, _ = X.shape
+    freqs = np.fft.rfftfreq(T, d=1.0 / fs)
+    band = (freqs >= f_lo) & (freqs <= f_hi)
+    if not np.any(band):
+        return False
 
-    rej = 1.0 - float(np.mean(passed))
-    return QualityGateResult(passed=passed, rejection_rate=rej)
+    P = np.abs(np.fft.rfft(X, axis=0)) ** 2
+    band_power = float(np.mean(P[band, :]))
+    total_power = float(np.mean(P))
+    if total_power <= 0.0:
+        return False
+
+    return (band_power / total_power) > 0.05
 
 
-def unwrap_consistency_gate(theta: np.ndarray, max_step: float = np.pi) -> bool:
-    """Simple unwrap/aliasing check: max step between samples should be bounded."""
-    theta = np.asarray(theta, dtype=float)
-    d = np.diff(theta, axis=-1)
-    return bool(np.all(np.abs(d) <= max_step))
+def robustness_gate(phases: np.ndarray, amp: np.ndarray | None = None) -> bool:
+    """
+    Minimal robustness gate placeholder.
+    Currently checks phase variance is non-degenerate; amplitude can be used for SNR thresholds.
+    """
+    phases = np.asarray(phases, dtype=float)
+    if phases.ndim != 2:
+        raise ValueError("phases must be (T, N)")
+
+    v = float(np.var(phases))
+    if not np.isfinite(v):
+        return False
+
+    if amp is not None:
+        amp = np.asarray(amp, dtype=float)
+        if float(np.mean(amp)) <= 1e-6:
+            return False
+
+    return v > 1e-6
+
+
+def consistency_gate(phases: np.ndarray, max_step: float = 5.0) -> bool:
+    """
+    Minimal consistency gate: checks that unwrapped phase increments are not implausibly large.
+    """
+    phases = np.asarray(phases, dtype=float)
+    if phases.ndim != 2:
+        raise ValueError("phases must be (T, N)")
+
+    d = np.diff(phases, axis=0)
+    m = float(np.max(np.abs(d)))
+    if not np.isfinite(m):
+        return False
+
+    return m < max_step
