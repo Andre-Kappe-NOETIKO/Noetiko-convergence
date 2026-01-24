@@ -1,0 +1,2 @@
+Windows passed: 20/20
+Rejection rate: 0.000
