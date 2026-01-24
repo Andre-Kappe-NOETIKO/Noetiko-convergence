@@ -74,5 +74,5 @@ ORCID: https://orcid.org/0009-0001-2799-379X
 
 ## License
 
-- Code: MIT License (see `LICENSE`)
+- Code: Apache-2.0 (see `LICENSE`)
 - Text/paper artifacts: please add an explicit license header in `/papers` if you include them here.
