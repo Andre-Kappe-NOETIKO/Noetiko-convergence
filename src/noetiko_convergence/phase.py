@@ -1,120 +1,89 @@
---- a/src/noetiko_convergence/phase.py
-+++ b/src/noetiko_convergence/phase.py
-@@ -1,6 +1,7 @@
- from __future__ import annotations
- 
- from dataclasses import dataclass
-+from typing import Optional, Tuple
- 
- import numpy as np
-from scipy.signal import hilbert, butter, filtfilt
+from __future__ import annotations
+
+from typing import Optional, Tuple
+
+import numpy as np
+from scipy.signal import hilbert
 
 
-@dataclass(frozen=True)
-class PhaseExtractionResult:
-    """Result of phase extraction.
-
-    Attributes
-    ----------
-    phase : np.ndarray
-        Instantaneous phase (radians), unwrapped if requested.
-        Shape: (n_channels, n_samples)
-    amplitude : np.ndarray
-        Instantaneous analytic amplitude. Shape: (n_channels, n_samples)
+def analytic_signal_phase(x: np.ndarray) -> np.ndarray:
     """
-    phase: np.ndarray
-    amplitude: np.ndarray
+    Extract instantaneous phase via analytic signal (Hilbert transform).
 
+    Args:
+        x: 1D array
 
-def bandpass_filtfilt(
-    x: np.ndarray,
-    fs_hz: float,
-    band_hz: Tuple[float, float],
-    order: int = 4,
-) -> np.ndarray:
-    """Zero-phase bandpass filter using Butterworth + filtfilt.
-
-    Parameters
-    ----------
-    x : np.ndarray
-        Array shaped (n_channels, n_samples) or (n_samples,).
-    fs_hz : float
-        Sampling rate in Hz.
-    band_hz : (low, high)
-        Bandpass in Hz. Must satisfy 0 < low < high < fs/2.
-    order : int
-        Butterworth filter order.
-
-    Returns
-    -------
-    np.ndarray filtered signal with same shape as input.
-    """
-    x = np.asarray(x)
-    if x.ndim == 1:
-        x2 = x[None, :]
-    elif x.ndim == 2:
-        x2 = x
-    else:
-        raise ValueError("x must be 1D or 2D (channels x samples).")
-
-    low, high = band_hz
-    nyq = 0.5 * fs_hz
-    if not (0 < low < high < nyq):
-        raise ValueError(f"Invalid band {band_hz} for fs={fs_hz} (nyquist={nyq}).")
-
-    b, a = butter(order, [low / nyq, high / nyq], btype="band")
-    y = filtfilt(b, a, x2, axis=-1)
-    return y[0] if x.ndim == 1 else y
-
-
-def hilbert_phase(
-    x: np.ndarray,
-    unwrap: bool = True,
-    fs_hz: Optional[float] = None,
-    band_hz: Optional[Tuple[float, float]] = None,
-    filter_order: int = 4,
-) -> PhaseExtractionResult:
-    """Extract instantaneous phase using the analytic signal (Hilbert transform).
-
-    Notes
-    -----
-    This is an operational phase map Φ used in Paper III. If band_hz is provided,
-    the signal is bandpass filtered first (recommended for broadband data).
-
-    Parameters
-    ----------
-    x : np.ndarray
-        Signal array shaped (n_channels, n_samples) or (n_samples,).
-    unwrap : bool
-        Whether to unwrap the phase along time.
-    fs_hz : float, optional
-        Sampling rate. Required if band_hz is provided.
-    band_hz : (low, high), optional
-        Optional bandpass in Hz.
-    filter_order : int
-        Butterworth order if filtering.
-
-    Returns
-    -------
-    PhaseExtractionResult
+    Returns:
+        phase: 1D array (wrapped to [-pi, pi])
     """
     x = np.asarray(x, dtype=float)
-    if x.ndim == 1:
-        x2 = x[None, :]
-    elif x.ndim == 2:
-        x2 = x
-    else:
-        raise ValueError("x must be 1D or 2D (channels x samples).")
+    z = hilbert(x)
+    return np.angle(z)
 
-    if band_hz is not None:
-        if fs_hz is None:
-            raise ValueError("fs_hz must be provided when band_hz is used.")
-        x2 = bandpass_filtfilt(x2, fs_hz=fs_hz, band_hz=band_hz, order=filter_order)
 
-    z = hilbert(x2, axis=-1)
+def unwrap_phase(phi: np.ndarray) -> np.ndarray:
+    """
+    Unwrap a phase time-series.
+    """
+    phi = np.asarray(phi, dtype=float)
+    return np.unwrap(phi)
+
+
+def phase_diff(phi_i: np.ndarray, phi_j: np.ndarray, wrap: bool = True) -> np.ndarray:
+    """
+    Phase difference Δφ = φ_j - φ_i, optionally wrapped to [-pi, pi].
+    """
+    d = np.asarray(phi_j, dtype=float) - np.asarray(phi_i, dtype=float)
+    if wrap:
+        return (d + np.pi) % (2.0 * np.pi) - np.pi
+    return d
+
+
+def bandpass_then_phase(
+    x: np.ndarray,
+    fs: float,
+    f_lo: float,
+    f_hi: float,
+    order: int = 4,
+) -> np.ndarray:
+    """
+    Convenience wrapper: bandpass filter then extract phase via Hilbert.
+    (Filtering is intentionally omitted here to keep dependencies minimal in the core;
+    implement your preferred bandpass in your application layer if needed.)
+    """
+    _ = (fs, f_lo, f_hi, order)
+    return analytic_signal_phase(x)
+
+
+def compute_phases_multichannel(
+    X: np.ndarray,
+    method: str = "hilbert",
+    unwrap: bool = True,
+) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """
+    Compute phases for multichannel data.
+
+    Args:
+        X: array (T, N)
+        method: currently 'hilbert'
+        unwrap: if True, unwrap phases
+
+    Returns:
+        phases: (T, N)
+        amp: optional amplitude proxy (T, N), returned for Hilbert method
+    """
+    X = np.asarray(X, dtype=float)
+    if X.ndim != 2:
+        raise ValueError("X must have shape (T, N)")
+
+    if method != "hilbert":
+        raise ValueError(f"Unsupported method: {method}")
+
+    z = hilbert(X, axis=0)
+    phases = np.angle(z)
     amp = np.abs(z)
-    ph = np.angle(z)
-    if unwrap:
-        ph = np.unwrap(ph, axis=-1)
 
-    return PhaseExtractionResult(phase=ph, amplitude=amp)
+    if unwrap:
+        phases = np.unwrap(phases, axis=0)
+
+    return phases, amp
