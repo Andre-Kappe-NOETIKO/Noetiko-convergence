@@ -1,21 +1,20 @@
 """Noetiko Convergence: reproducibility toolkit for Papers I–III.
 
-This package implements operational measurement-to-model pipelines:
-phase extraction, quality gates, surrogate controls, coordination metrics,
-Kuramoto-type sanity simulations, and switching/barrier inference helpers.
-
 Design principle: conservative, operational, falsifiable. No semantic claims.
+
+Import submodules explicitly, e.g.:
+- from noetiko_convergence.phase import hilbert_phase
+- from noetiko_convergence.kuramoto import simulate_kuramoto_em
+- from noetiko_convergence.surrogates import phase_randomization_surrogate
 """
 
-from .metrics import order_parameter
-from .phase import hilbert_phase
-from .surrogates import phase_randomization_surrogate, time_shift_surrogate
-from .kuramoto import simulate_kuramoto_em
+from __future__ import annotations
 
-__all__ = [
-    "order_parameter",
-    "hilbert_phase",
-    "phase_randomization_surrogate",
-    "time_shift_surrogate",
-    "simulate_kuramoto_em",
-]
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("noetiko-convergence")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
+
+__all__ = ["__version__"]
