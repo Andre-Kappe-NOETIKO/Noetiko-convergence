@@ -1,89 +1,68 @@
---- a/src/noetiko_convergence/surrogates.py
-+++ b/src/noetiko_convergence/surrogates.py
-@@ -1,7 +1,7 @@
- from __future__ import annotations
- 
--from dataclasses import dataclass
-+from typing import Optional
- 
- import numpy as np
+from __future__ import annotations
+
+from typing import Optional
+
+import numpy as np
 
 
-def phase_randomization_surrogate(
+def time_shift_surrogate(x: np.ndarray, shift: int) -> np.ndarray:
+    """
+    Circular time shift surrogate.
+    """
+    x = np.asarray(x)
+    shift = int(shift) % x.shape[0]
+    return np.roll(x, shift=shift, axis=0)
+
+
+def fourier_phase_randomization(
     x: np.ndarray,
     rng: Optional[np.random.Generator] = None,
 ) -> np.ndarray:
-    """Fourier phase randomization surrogate (preserves power spectrum).
-
-    Parameters
-    ----------
-    x : np.ndarray
-        Signal shaped (n_channels, n_samples) or (n_samples,).
-    rng : np.random.Generator, optional
-        Random generator.
-
-    Returns
-    -------
-    np.ndarray surrogate signal with same shape as x.
-
-    Notes
-    -----
-    This is a standard surrogate used to test whether coordination signatures
-    exceed what is explainable by marginal spectra alone.
     """
-    rng = rng or np.random.default_rng()
-    x = np.asarray(x, dtype=float)
-    if x.ndim == 1:
-        x2 = x[None, :]
-    elif x.ndim == 2:
-        x2 = x
-    else:
-        raise ValueError("x must be 1D or 2D (channels x samples).")
+    Fourier phase randomization surrogate (preserves power spectrum approximately).
 
-    n = x2.shape[-1]
-    X = np.fft.rfft(x2, axis=-1)
+    For real-valued signals, we randomize phases of positive frequencies and
+    reconstruct a real signal via inverse FFT.
+    """
+    x = np.asarray(x, dtype=float)
+    if x.ndim != 1:
+        raise ValueError("x must be 1D for this surrogate")
+
+    if rng is None:
+        rng = np.random.default_rng()
+
+    n = x.shape[0]
+    X = np.fft.rfft(x)
     mag = np.abs(X)
+    phase = np.angle(X)
 
-    # Randomize phases except DC and Nyquist (if present)
-    rand_ph = rng.uniform(0, 2*np.pi, size=X.shape)
-    rand_ph[..., 0] = 0.0
+    # randomize phases except DC (0) and Nyquist (if present)
+    rand = rng.uniform(0.0, 2.0 * np.pi, size=phase.shape)
+    rand[0] = phase[0]
     if n % 2 == 0:
-        rand_ph[..., -1] = 0.0
+        rand[-1] = phase[-1]
 
-    Y = mag * np.exp(1j * rand_ph)
-    y = np.fft.irfft(Y, n=n, axis=-1)
-    return y[0] if x.ndim == 1 else y
+    Xs = mag * np.exp(1j * rand)
+    xs = np.fft.irfft(Xs, n=n)
+    return xs
 
 
-def time_shift_surrogate(
-    x: np.ndarray,
-    min_shift: int,
+def phase_randomization_multichannel(
+    X: np.ndarray,
     rng: Optional[np.random.Generator] = None,
 ) -> np.ndarray:
-    """Circular time-shift surrogate across channels.
-
-    Parameters
-    ----------
-    x : np.ndarray
-        Signal shaped (n_channels, n_samples).
-    min_shift : int
-        Minimum circular shift in samples (to exceed coherence time).
-    rng : np.random.Generator, optional
-
-    Returns
-    -------
-    np.ndarray shifted signal with same shape.
     """
-    rng = rng or np.random.default_rng()
-    x = np.asarray(x, dtype=float)
-    if x.ndim != 2:
-        raise ValueError("x must be 2D (channels x samples) for time_shift_surrogate.")
-    n_ch, n = x.shape
-    if min_shift < 1 or min_shift >= n:
-        raise ValueError("min_shift must satisfy 1 <= min_shift < n_samples.")
+    Apply Fourier phase randomization independently to each channel.
+    """
+    X = np.asarray(X, dtype=float)
+    if X.ndim != 2:
+        raise ValueError("X must have shape (T, N)")
 
-    y = np.empty_like(x)
-    for i in range(n_ch):
-        shift = int(rng.integers(min_shift, n))
-        y[i] = np.roll(x[i], shift)
-    return y
+    if rng is None:
+        rng = np.random.default_rng()
+
+    T, N = X.shape
+    out = np.empty((T, N), dtype=float)
+    for j in range(N):
+        out[:, j] = fourier_phase_randomization(X[:, j], rng=rng)
+    return out
