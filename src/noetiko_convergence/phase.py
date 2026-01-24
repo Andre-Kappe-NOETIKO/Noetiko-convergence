@@ -20,11 +20,13 @@ def analytic_signal_phase(x: np.ndarray) -> np.ndarray:
     z = hilbert(x)
     return np.angle(z)
 
+
 def hilbert_phase(x: np.ndarray) -> np.ndarray:
     """
     Backwards-compatible alias for analytic_signal_phase.
     """
     return analytic_signal_phase(x)
+
 
 def unwrap_phase(phi: np.ndarray) -> np.ndarray:
     """
