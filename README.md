@@ -1,5 +1,7 @@
 # Noetiko Convergence — Reproducibility Toolkit (Papers I–III)
 
+![CI](https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence/actions/workflows/python-ci.yml/badge.svg)
+
 This repository provides a conservative, operational, and falsifiable implementation scaffold for the **Noetiko Convergence** trilogy:
 
 - **Paper I**: metastable information persistence under open‑system constraints (effective stability scale \(\kappa\), switching statistics, barrier‑like inference)
