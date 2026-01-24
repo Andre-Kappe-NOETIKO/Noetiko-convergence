@@ -1,76 +1,69 @@
 from __future__ import annotations
 
-import argparse
-from pathlib import Path
-from typing import Tuple
-
 import numpy as np
-import matplotlib.pyplot as plt
 
-from .phase import hilbert_phase
-from .metrics import order_parameter
-from .surrogates import phase_randomization_surrogate, time_shift_surrogate
-from .quality_gates import windowed_snr_gate
-
-
-def _synthetic_multichannel(fs: float, seconds: float, n_ch: int, f0: float, rng: np.random.Generator) -> np.ndarray:
-    t = np.arange(int(fs * seconds)) / fs
-    x = np.zeros((n_ch, t.size), dtype=float)
-    # shared oscillation + channel phase offsets + independent noise
-    base_phase = rng.uniform(0, 2*np.pi)
-    for i in range(n_ch):
-        phi = base_phase + rng.uniform(-0.6, 0.6)
-        x[i] = np.sin(2*np.pi*f0*t + phi) + 0.4*rng.standard_normal(size=t.size)
-    return x
+from .kuramoto import order_parameter, simulate_kuramoto_global
+from .phase import compute_phases_multichannel
+from .quality_gates import (
+    consistency_gate,
+    robustness_gate,
+    spectral_gate,
+)
+from .surrogates import phase_randomization_multichannel, time_shift_surrogate
 
 
-def run_demo(out_dir: Path, fs: float = 250.0, seconds: float = 20.0, band: Tuple[float, float] = (6.0, 10.0)) -> None:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    rng = np.random.default_rng(7)
+def run_demo(seed: int = 0) -> dict[str, float]:
+    """
+    Proof-of-protocol demo:
+    - simulate multichannel oscillatory data (as a stand-in)
+    - extract phases
+    - apply quality gates
+    - compute r(t)
+    - compare against mandatory surrogates
 
-    x = _synthetic_multichannel(fs=fs, seconds=seconds, n_ch=16, f0=8.0, rng=rng)
-    res = hilbert_phase(x, unwrap=True, fs_hz=fs, band_hz=band)
+    Returns:
+        summary dict (non-interpretive).
+    """
+    rng = np.random.default_rng(seed)
 
-    # Quality gate using amplitude proxy
-    gate = windowed_snr_gate(res.amplitude, window_size=int(fs*1.0), amp_threshold=float(np.median(res.amplitude) * 0.6))
+    # synthetic phases via Kuramoto (stand-in for any multichannel dataset)
+    N = 12
+    omega = rng.normal(loc=0.0, scale=0.8, size=N)
+    theta = simulate_kuramoto_global(omega, K=1.7, D=0.08, dt=0.02, steps=2500, seed=seed)
 
-    op = order_parameter(res.phase, axis=0)
-    r = op.r
+    # create synthetic observables x_i(t) from phases (cosine projection + noise)
+    X = np.cos(theta) + 0.12 * rng.standard_normal(size=theta.shape)
 
-    # Surrogates (compute r for each)
-    x_pr = phase_randomization_surrogate(x, rng=rng)
-    pr_res = hilbert_phase(x_pr, unwrap=True, fs_hz=fs, band_hz=band)
-    r_pr = order_parameter(pr_res.phase, axis=0).r
+    # extract phases
+    phases, amp = compute_phases_multichannel(X, method="hilbert", unwrap=True)
 
-    x_ts = time_shift_surrogate(x, min_shift=int(fs*2.0), rng=rng)
-    ts_res = hilbert_phase(x_ts, unwrap=True, fs_hz=fs, band_hz=band)
-    r_ts = order_parameter(ts_res.phase, axis=0).r
+    # gates (non-exhaustive minimal set)
+    g1 = spectral_gate(X, fs=50.0, f_lo=0.5, f_hi=10.0)
+    g2 = robustness_gate(phases, amp=amp)
+    g3 = consistency_gate(phases)
 
-    # Plot
-    t = np.arange(r.size) / fs
-    plt.figure()
-    plt.plot(t, r, label="observed r(t)")
-    plt.plot(t, r_pr, label="phase-rand surrogate")
-    plt.plot(t, r_ts, label="time-shift surrogate")
-    plt.xlabel("time (s)")
-    plt.ylabel("r(t)")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(out_dir / "demo_r_surrogates.png", dpi=200)
+    passed = float(g1 and g2 and g3)
 
-    # Save gate summary
-    (out_dir / "gate_summary.txt").write_text(
-        f"Windows passed: {gate.passed.sum()}/{gate.passed.size}\nRejection rate: {gate.rejection_rate:.3f}\n",
-        encoding="utf-8",
-    )
+    r_t = order_parameter(phases)
 
+    # surrogates
+    X_pr = phase_randomization_multichannel(X, rng=rng)
+    phases_pr, _ = compute_phases_multichannel(X_pr, method="hilbert", unwrap=True)
+    r_pr = order_parameter(phases_pr)
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Noetiko Convergence proof-of-protocol demo (synthetic).")
-    ap.add_argument("--out", default="results/demo", help="Output directory")
-    args = ap.parse_args()
-    run_demo(Path(args.out))
+    X_ts = time_shift_surrogate(X, shift=250)
+    phases_ts, _ = compute_phases_multichannel(X_ts, method="hilbert", unwrap=True)
+    r_ts = order_parameter(phases_ts)
 
+    # simple separation metric
+    sep_pr = float(np.mean(r_t) - np.mean(r_pr))
+    sep_ts = float(np.mean(r_t) - np.mean(r_ts))
 
-if __name__ == "__main__":
-    main()
+    return {
+        "passed_gates": passed,
+        "mean_r": float(np.mean(r_t)),
+        "mean_r_phase_rand": float(np.mean(r_pr)),
+        "mean_r_time_shift": float(np.mean(r_ts)),
+        "sep_phase_rand": sep_pr,
+        "sep_time_shift": sep_ts,
+    }
