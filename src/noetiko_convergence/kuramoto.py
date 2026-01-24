@@ -1,8 +1,12 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-
-import numpy as np
+--- a/src/noetiko_convergence/kuramoto.py
++++ b/src/noetiko_convergence/kuramoto.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ from dataclasses import dataclass
++from typing import Optional
+ 
+ import numpy as np
 
 
 @dataclass(frozen=True)
