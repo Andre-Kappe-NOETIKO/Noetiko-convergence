@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Noetiko Convergence — Reproducibility Toolkit (Papers I–III)"
+type: software
+authors:
+  - given-names: "Andre"
+    family-names: "Kappe"
+    orcid: "https://orcid.org/0009-0001-2799-379X"
+repository-code: "https://github.com/<your-org-or-user>/<repo>"
+url: "https://github.com/<your-org-or-user>/<repo>"
+license: "MIT"
+version: "0.1.0"
+date-released: "2026-01-23"
+doi: "10.5281/zenodo.<placeholder>"
+keywords:
+  - "open systems"
+  - "metastability"
+  - "phase extraction"
+  - "surrogate data"
+  - "Kuramoto model"
+  - "switching statistics"
+  - "falsifiability"
+abstract: >
+  Operational implementation scaffold for the Noetiko Convergence trilogy:
+  phase extraction with admissibility gates, surrogate controls, coordination
+  metrics, Kuramoto-type sanity simulations, and switching statistics helpers.
