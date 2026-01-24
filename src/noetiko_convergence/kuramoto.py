@@ -1,20 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-
-
-@dataclass(frozen=True)
-class KuramotoParams:
-    """Parameter container for the noisy globally-coupled Kuramoto model."""
-
-    K: float
-    D: float
-    dt: float
-    steps: int
-    seed: Optional[int] = None
 
 
 def simulate_kuramoto_em(
@@ -22,9 +10,12 @@ def simulate_kuramoto_em(
     K: float,
     D: float,
     dt: float,
-    steps: int,
+    steps: Optional[int] = None,
+    *,
+    n_steps: Optional[int] = None,
     theta0: Optional[np.ndarray] = None,
     seed: Optional[int] = None,
+    rng: Optional[np.random.Generator] = None,
 ) -> np.ndarray:
     """
     Euler–Maruyama simulation for noisy globally-coupled Kuramoto phases.
@@ -32,21 +23,23 @@ def simulate_kuramoto_em(
     SDE:
         dθ_i = ω_i dt + (K/N) Σ_j sin(θ_j - θ_i) dt + sqrt(2D) dW_i
 
-    Using the identity:
-        (K/N) Σ_j sin(θ_j - θ_i) = K r sin(ψ - θ_i)
-        where r e^{iψ} = (1/N) Σ_j e^{iθ_j}
+    API notes (for test-compatibility):
+      - accepts `n_steps` as an alias for `steps`
+      - accepts `rng` (np.random.Generator). If provided, it overrides `seed`.
 
     Args:
         omega: shape (N,), natural frequencies.
         K: coupling strength.
         D: phase noise intensity (>= 0).
         dt: time step (> 0).
-        steps: number of steps (> 0).
+        steps: number of time steps (legacy name).
+        n_steps: number of time steps (preferred in tests).
         theta0: optional initial phases, shape (N,).
-        seed: RNG seed.
+        seed: RNG seed (used only if rng is None).
+        rng: numpy Generator (preferred).
 
     Returns:
-        theta: array of shape (steps, N) with phases.
+        theta: array of shape (n_steps, N) with phases.
     """
     omega = np.asarray(omega, dtype=float)
     if omega.ndim != 1:
@@ -54,14 +47,26 @@ def simulate_kuramoto_em(
 
     if dt <= 0:
         raise ValueError("dt must be > 0")
-    if steps <= 0:
-        raise ValueError("steps must be > 0")
     if D < 0:
         raise ValueError("D must be >= 0")
 
-    n = omega.size
-    rng = np.random.default_rng(seed)
+    # Resolve number of steps (support both names)
+    if n_steps is None and steps is None:
+        raise TypeError("You must provide `n_steps` or `steps`.")
+    if n_steps is not None and steps is not None and n_steps != steps:
+        raise ValueError("If both `n_steps` and `steps` are provided, they must match.")
 
+    T = int(n_steps if n_steps is not None else steps)  # final step count
+    if T <= 0:
+        raise ValueError("Number of steps must be > 0")
+
+    n = omega.size
+
+    # Resolve RNG
+    if rng is None:
+        rng = np.random.default_rng(seed)
+
+    # Init phases
     if theta0 is None:
         theta = rng.uniform(0.0, 2.0 * np.pi, size=n).astype(float)
     else:
@@ -69,10 +74,10 @@ def simulate_kuramoto_em(
         if theta.shape != (n,):
             raise ValueError(f"theta0 must have shape {(n,)}, got {theta.shape}")
 
-    out = np.empty((steps, n), dtype=float)
+    out = np.empty((T, n), dtype=float)
     noise_scale = np.sqrt(2.0 * D * dt) if D > 0 else 0.0
 
-    for t in range(steps):
+    for t in range(T):
         z = np.mean(np.exp(1j * theta))  # complex order parameter
         r = np.abs(z)
         psi = np.angle(z)
@@ -86,37 +91,3 @@ def simulate_kuramoto_em(
         out[t] = theta
 
     return out
-
-
-def simulate_kuramoto_global(
-    omega: np.ndarray,
-    K: float,
-    D: float,
-    dt: float,
-    steps: int,
-    theta0: Optional[np.ndarray] = None,
-    seed: Optional[int] = None,
-) -> np.ndarray:
-    """Backwards-compatible alias."""
-    return simulate_kuramoto_em(omega=omega, K=K, D=D, dt=dt, steps=steps, theta0=theta0, seed=seed)
-
-
-def order_parameter(theta: np.ndarray) -> np.ndarray:
-    """
-    Compute r(t) from phases.
-
-    Args:
-        theta: shape (T, N) or (N,).
-
-    Returns:
-        r: shape (T,) if theta is (T, N), else shape (1,).
-    """
-    theta = np.asarray(theta, dtype=float)
-
-    if theta.ndim == 1:
-        return np.array([np.abs(np.mean(np.exp(1j * theta)))], dtype=float)
-
-    if theta.ndim != 2:
-        raise ValueError("theta must have shape (N,) or (T, N)")
-
-    return np.abs(np.mean(np.exp(1j * theta), axis=1))
