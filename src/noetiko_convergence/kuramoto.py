@@ -1,73 +1,135 @@
-import numpy as np
+from __future__ import annotations
+
+from dataclasses import dataclass
 from typing import Optional
+
+import numpy as np
+
+
+@dataclass(frozen=True)
+class KuramotoSimResult:
+    """Simulation result container.
+
+    Attributes
+    ----------
+    t : np.ndarray
+        Time grid, shape (n_steps,).
+    theta : np.ndarray
+        Phase trajectory, shape (n_osc, n_steps).
+        Time is along axis=1 to match tests and common signal conventions.
+    """
+
+    t: np.ndarray
+    theta: np.ndarray  # (n_osc, n_steps)
+
 
 def simulate_kuramoto_em(
     omega: np.ndarray,
     K: float,
     D: float,
     dt: float,
-    steps: Optional[int] = None,
-    theta0: Optional[np.ndarray] = None,
-    seed: Optional[int] = None,
     n_steps: Optional[int] = None,
+    *,
+    steps: Optional[int] = None,
     rng: Optional[np.random.Generator] = None,
-) -> np.ndarray:
+    seed: Optional[int] = None,
+    theta0: Optional[np.ndarray] = None,
+    wrap: bool = True,
+) -> KuramotoSimResult:
+    """Euler–Maruyama simulation of the globally-coupled noisy Kuramoto model.
+
+    Model:
+        dθ_i = [ ω_i + (K/N) Σ_j sin(θ_j - θ_i) ] dt + sqrt(2D) dW_i
+
+    Notes
+    -----
+    - API is aligned with tests: accepts `n_steps` and `rng`.
+    - Backward-compatible alias: `steps` (keyword-only).
+    - RNG precedence: if `rng` is given, it is used; otherwise `seed` is used.
+
+    Parameters
+    ----------
+    omega : np.ndarray
+        Natural frequencies, shape (n_osc,).
+    K : float
+        Coupling strength.
+    D : float
+        Phase noise intensity.
+    dt : float
+        Time step (> 0).
+    n_steps : int, optional
+        Number of steps (preferred name; used by tests).
+    steps : int, optional
+        Alias for n_steps (kept for backward compatibility).
+    rng : np.random.Generator, optional
+        Random generator (preferred over seed).
+    seed : int, optional
+        Seed used only if rng is None.
+    theta0 : np.ndarray, optional
+        Initial phases, shape (n_osc,). If None: uniform in [0, 2π).
+    wrap : bool
+        If True, wrap phases into [-π, π] each step.
+
+    Returns
+    -------
+    KuramotoSimResult
+        t shape (n_steps,), theta shape (n_osc, n_steps).
     """
-    Simulate the Kuramoto model with noise using Euler-Maruyama method.
-    
-    Parameters:
-    - omega: Array of natural frequencies (shape N)
-    - K: Coupling strength
-    - D: Noise intensity
-    - dt: Time step
-    - steps: Number of simulation steps (backward compatible)
-    - theta0: Initial phases (optional)
-    - seed: Random seed (if rng not provided)
-    - n_steps: Alias for steps (for test compatibility)
-    - rng: Random number generator (optional)
-    
-    Returns:
-    - Trajectory of phases: shape (steps + 1, N)
-    """
-    if steps is None and n_steps is None:
-        raise ValueError("Must provide either 'steps' or 'n_steps'")
-    if steps is not None and n_steps is not None and steps != n_steps:
-        raise ValueError("'steps' and 'n_steps' must be equal if both provided")
-    
-    num_steps = steps if steps is not None else n_steps
-    
-    if num_steps is None or num_steps <= 0:
-        raise ValueError("Number of steps must be a positive integer")
-    
-    N = len(omega)
-    
+    # ---- resolve steps / n_steps ----
+    if n_steps is None and steps is None:
+        raise ValueError("Provide `n_steps` (preferred) or `steps` (alias).")
+    if n_steps is not None and steps is not None and n_steps != steps:
+        raise ValueError("If both provided, `n_steps` and `steps` must match.")
+    n_steps_final = int(n_steps if n_steps is not None else steps)  # type: ignore[arg-type]
+
+    if dt <= 0:
+        raise ValueError("dt must be > 0.")
+    if n_steps_final < 2:
+        raise ValueError("n_steps must be >= 2.")
+    if D < 0:
+        raise ValueError("D must be >= 0.")
+
+    # ---- rng ----
     if rng is None:
         rng = np.random.default_rng(seed)
-    
+
+    # ---- inputs ----
+    omega = np.asarray(omega, dtype=float)
+    n = int(omega.size)
+    if n < 2:
+        raise ValueError("Need at least 2 oscillators (len(omega) >= 2).")
+
+    # ---- init theta ----
     if theta0 is None:
-        theta = rng.uniform(-np.pi, np.pi, N)
+        theta = rng.uniform(0.0, 2.0 * np.pi, size=n)
     else:
-        if theta0.shape != (N,):
-            raise ValueError(f"theta0 must have shape ({N},)")
-        theta = theta0.copy()
-    
-    trajectory = np.zeros((num_steps + 1, N))
-    trajectory[0] = theta
-    
-    sqrt_2D_dt = np.sqrt(2 * D * dt)
-    
-    for t in range(1, num_steps + 1):
-        sin_theta = np.sin(theta)
-        cos_theta = np.cos(theta)
-        mean_sin = np.mean(sin_theta)
-        mean_cos = np.mean(cos_theta)
-        
-        drift = omega + K * (mean_sin * cos_theta - mean_cos * sin_theta)
-        diffusion = sqrt_2D_dt * rng.standard_normal(N)
-        
-        theta += dt * drift + diffusion
-        # Optional: theta %= 2 * np.pi  # But not necessary for most analyses
-        
-        trajectory[t] = theta
-    
-    return trajectory
+        theta = np.asarray(theta0, dtype=float).copy()
+        if theta.shape != (n,):
+            raise ValueError(f"theta0 must have shape ({n},).")
+
+    # ---- allocate output: match tests (n_osc, n_steps) ----
+    out = np.empty((n, n_steps_final), dtype=float)
+    out[:, 0] = theta
+    t = np.arange(n_steps_final, dtype=float) * dt
+
+    sqrt_2Ddt = np.sqrt(2.0 * D * dt) if D > 0 else 0.0
+
+    # ---- EM integration ----
+    for k in range(1, n_steps_final):
+        # mean-field identity:
+        # (K/N) Σ_j sin(θ_j - θ_i) = K * r * sin(ψ - θ_i)
+        order = np.mean(np.exp(1j * theta))
+        r = np.abs(order)
+        psi = np.angle(order)
+
+        drift = omega + K * r * np.sin(psi - theta)
+        noise = sqrt_2Ddt * rng.standard_normal(size=n) if sqrt_2Ddt > 0 else 0.0
+
+        theta = theta + drift * dt + noise
+
+        if wrap:
+            theta = (theta + np.pi) % (2.0 * np.pi) - np.pi
+
+        out[:, k] = theta
+
+    return KuramotoSimResult(t=t, theta=out)
