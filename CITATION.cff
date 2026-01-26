@@ -23,6 +23,7 @@ keywords:
   - "scientific computing"
   - "open science"
 version: "0.1.0"
+date-released: "2026-01-26"
 
 preferred-citation:
   type: software
@@ -36,15 +37,15 @@ preferred-citation:
   repository-code: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
   url: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
   version: "0.1.0"
+  date-released: "2026-01-26"
 
 references:
   - type: article
     title: "Dimensional Delimitation: The Primacy of Information"
     authors:
       - family-names: "Kappe"
-        given-names: "Andre"
+        given-names: "André"
     year: 2026
-    publisher: "Zenodo"
     doi: "10.5281/zenodo.18181812"
     url: "https://doi.org/10.5281/zenodo.18181812"
 
@@ -52,9 +53,8 @@ references:
     title: "Noetiko Convergence: Phase-Synchronization of Macroscopic Quantum States in Biological Media"
     authors:
       - family-names: "Kappe"
-        given-names: "Andre"
+        given-names: "André"
     year: 2026
-    publisher: "Zenodo"
     doi: "10.5281/zenodo.18182185"
     url: "https://doi.org/10.5281/zenodo.18182185"
 
@@ -64,6 +64,5 @@ references:
       - family-names: "Kappe"
         given-names: "André"
     year: 2026
-    publisher: "Zenodo"
     doi: "10.5281/zenodo.18182564"
     url: "https://doi.org/10.5281/zenodo.18182564"
