@@ -1,47 +1,69 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "Noetiko Convergence — Reproducibility Toolkit (Papers I–III)"
 type: software
-
+title: "Noetiko Convergence"
+abstract: >
+  Noetiko Convergence is a Python toolkit for reproducible analysis and simulation of
+  phase synchronization under noise, with a focus on scientifically auditable metrics,
+  surrogate testing, and clear reporting artifacts for open science workflows.
 authors:
-  - given-names: "Andre"
-    family-names: "Kappe"
+  - family-names: "Kappe"
+    given-names: "André"
     orcid: "https://orcid.org/0009-0001-2799-379X"
-
+    affiliation: "Noetiko Research Division"
+license: "Apache-2.0"
 repository-code: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
 url: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
-
-license: "Apache-2.0"
-
-version: "0.1.0"
-date-released: "2026-01-26"
-
 keywords:
-  - reproducibility
-  - open science
-  - stochastic processes
-  - metastability
-  - phase extraction
-  - surrogate data
-  - Kuramoto model
-  - switching statistics
-  - validation suite
-  - scientific software
+  - "reproducibility"
+  - "phase synchronization"
+  - "Kuramoto model"
+  - "stochastic dynamics"
+  - "surrogate data"
+  - "scientific computing"
+  - "open science"
+version: "0.1.0"
 
-abstract: >
-  Noetiko Convergence is a reproducibility-focused toolkit accompanying the
-  Noetiko Convergence paper trilogy (Papers I–III). It provides reference
-  implementations and validation utilities for phase-based analysis, admissibility
-  gates, surrogate controls, coordination metrics, and related numerical
-  procedures designed for reproducible scientific workflows.
+preferred-citation:
+  type: software
+  title: "Noetiko Convergence"
+  authors:
+    - family-names: "Kappe"
+      given-names: "André"
+      orcid: "https://orcid.org/0009-0001-2799-379X"
+      affiliation: "Noetiko Research Division"
+  license: "Apache-2.0"
+  repository-code: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
+  url: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
+  version: "0.1.0"
 
 references:
-  - type: generic
-    title: "Noetiko Convergence (Paper II): Phase Dynamics and Synchronization"
-    url: "https://zenodo.org/"
-  - type: generic
-    title: "Noetiko Convergence (Paper I): Noise-Assisted Switching and Stability"
-    url: "https://zenodo.org/"
-  - type: generic
-    title: "Noetiko Convergence (Paper III): Surrogate Validation Protocols"
-    url: "https://zenodo.org/"
+  - type: article
+    title: "Dimensional Delimitation: The Primacy of Information"
+    authors:
+      - family-names: "Kappe"
+        given-names: "Andre"
+    year: 2026
+    publisher: "Zenodo"
+    doi: "10.5281/zenodo.18181812"
+    url: "https://doi.org/10.5281/zenodo.18181812"
+
+  - type: article
+    title: "Noetiko Convergence: Phase-Synchronization of Macroscopic Quantum States in Biological Media"
+    authors:
+      - family-names: "Kappe"
+        given-names: "Andre"
+    year: 2026
+    publisher: "Zenodo"
+    doi: "10.5281/zenodo.18182185"
+    url: "https://doi.org/10.5281/zenodo.18182185"
+
+  - type: article
+    title: "Spin-Mediated Negentropy: Triggering Coherent Domains in Aqueous Systems via 1.42 GHz Hyperfine Resonance"
+    authors:
+      - family-names: "Kappe"
+        given-names: "André"
+    year: 2026
+    publisher: "Zenodo"
+    doi: "10.5281/zenodo.18182564"
+    url: "https://doi.org/10.5281/zenodo.18182564"
