@@ -8,13 +8,13 @@ version = "0.1.0"
 description = "Reproducibility toolkit for the Noetiko Convergence trilogy (Papers I–III): operational phase-coordination, surrogates, and switching statistics."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE.txt"}
+license = "Apache-2.0"
 authors = [
   {name = "Andre Kappe", email = "andre.kappe@noetiko.tech"},
 ]
 keywords = ["open systems", "metastability", "phase extraction", "Kuramoto", "surrogate data", "stochastic resonance", "falsifiability"]
 classifiers = [
-  "License :: OSI Approved :: Apache Software License",
+  	license-files = ["LICENSE", "NOTICE"],
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Topic :: Scientific/Engineering :: Physics",
