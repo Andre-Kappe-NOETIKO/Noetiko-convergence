@@ -22,3 +22,7 @@ Thumbs.db
 
 # Results / outputs
 results/
+
+# Accidental paste / stray files
+/e v*
+/h CITATION.cff*
