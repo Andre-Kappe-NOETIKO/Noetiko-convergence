@@ -14,7 +14,6 @@ authors = [
 ]
 keywords = ["open systems", "metastability", "phase extraction", "Kuramoto", "surrogate data", "stochastic resonance", "falsifiability"]
 classifiers = [
-  	license-files = ["LICENSE", "NOTICE"],
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Topic :: Scientific/Engineering :: Physics",
