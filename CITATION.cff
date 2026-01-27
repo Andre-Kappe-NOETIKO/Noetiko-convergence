@@ -10,7 +10,7 @@ authors:
   - family-names: "Kappe"
     given-names: "André"
     orcid: "https://orcid.org/0009-0001-2799-379X"
-    affiliation: "Noetiko Research Division"
+    affiliation: "Noetiko Research Division, Cologne, Germany"
 license: "Apache-2.0"
 repository-code: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
 url: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
@@ -22,8 +22,9 @@ keywords:
   - "surrogate data"
   - "scientific computing"
   - "open science"
-version: "0.1.0"
-date-released: "2026-01-26"
+  - "metastability"
+  - "coordination dynamics"
+version: "0.1.1"
 
 preferred-citation:
   type: software
@@ -32,37 +33,49 @@ preferred-citation:
     - family-names: "Kappe"
       given-names: "André"
       orcid: "https://orcid.org/0009-0001-2799-379X"
-      affiliation: "Noetiko Research Division"
+      affiliation: "Noetiko Research Division, Cologne, Germany"
   license: "Apache-2.0"
   repository-code: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
   url: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
-  version: "0.1.0"
-  date-released: "2026-01-26"
+  version: "0.1.1"
 
 references:
   - type: article
-    title: "Dimensional Delimitation: The Primacy of Information"
+    title: "Noetiko Convergence I: Dimensional Delimitation and the Energetics of Biological Information Stability"
     authors:
       - family-names: "Kappe"
         given-names: "André"
     year: 2026
-    doi: "10.5281/zenodo.18181812"
-    url: "https://doi.org/10.5281/zenodo.18181812"
+    publisher: "Zenodo"
+    doi: "10.5281/zenodo.18379906"
+    url: "https://doi.org/10.5281/zenodo.18379906"
 
   - type: article
-    title: "Noetiko Convergence: Phase-Synchronization of Macroscopic Quantum States in Biological Media"
+    title: "Noetiko Convergence II: Operational Phase-Coordination Signatures in Coupled Oscillator Networks"
     authors:
       - family-names: "Kappe"
         given-names: "André"
     year: 2026
-    doi: "10.5281/zenodo.18182185"
-    url: "https://doi.org/10.5281/zenodo.18182185"
+    publisher: "Zenodo"
+    doi: "10.5281/zenodo.18379950"
+    url: "https://doi.org/10.5281/zenodo.18379950"
 
   - type: article
-    title: "Spin-Mediated Negentropy: Triggering Coherent Domains in Aqueous Systems via 1.42 GHz Hyperfine Resonance"
+    title: "Noetiko Convergence III: Measurement-to-Model Protocols for Metastable Coordination in Open Systems"
     authors:
       - family-names: "Kappe"
         given-names: "André"
     year: 2026
-    doi: "10.5281/zenodo.18182564"
-    url: "https://doi.org/10.5281/zenodo.18182564"
+    publisher: "Zenodo"
+    doi: "10.5281/zenodo.18379991"
+    url: "https://doi.org/10.5281/zenodo.18379991"
+
+  - type: article
+    title: "Noetiko Convergence: A Conservative, Falsifiable Framework for Metastable Information and Coordination in Open Systems (Synthesis)"
+    authors:
+      - family-names: "Kappe"
+        given-names: "André"
+    year: 2026
+    publisher: "Zenodo"
+    doi: "10.5281/zenodo.18384275"
+    url: "https://doi.org/10.5281/zenodo.18384275"
