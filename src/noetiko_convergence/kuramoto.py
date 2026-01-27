@@ -1,3 +1,4 @@
+cat > src/noetiko_convergence/kuramoto.py <<'PY'
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,7 +17,7 @@ class KuramotoSimResult:
         Time grid, shape (n_steps,).
     theta
         Phase trajectories, shape (n_osc, n_steps).
-        Time runs along axis=1 (matches common signal conventions).
+        Time runs along axis=1.
     """
 
     t: np.ndarray
@@ -32,16 +33,16 @@ def order_parameter(theta: np.ndarray, *, axis: int = 0) -> np.ndarray:
     ----------
     theta
         Phases. Common shapes:
-        - (n_osc,) -> returns complex scalar (0-d array / complex)
-        - (n_osc, n_steps) with axis=0 -> returns (n_steps,) complex
-        - (n_steps, n_osc) with axis=1 -> returns (n_steps,) complex
+        - (n_osc,) -> complex scalar
+        - (n_osc, n_steps) with axis=0 -> (n_steps,) complex
+        - (n_steps, n_osc) with axis=1 -> (n_steps,) complex
     axis
         Axis along which oscillators are arranged.
 
     Returns
     -------
     np.ndarray
-        Complex order parameter(s). Magnitude |R| is r(t), angle is mean phase ψ(t).
+        Complex order parameter(s). |R| is r(t), angle(R) is mean phase ψ(t).
     """
     th = np.asarray(theta, dtype=float)
     return np.mean(np.exp(1j * th), axis=axis)
@@ -76,11 +77,6 @@ def simulate_kuramoto_global(
     - Accepts both `n_steps` (preferred) and `steps` (alias).
     - RNG precedence: if `rng` is given it is used; else `seed` is used.
     - Output theta is stored as (n_osc, n_steps).
-
-    Returns
-    -------
-    KuramotoSimResult
-        t shape (n_steps,), theta shape (n_osc, n_steps).
     """
     # --- resolve steps ---
     if n_steps is None and steps is None:
@@ -144,7 +140,6 @@ def simulate_kuramoto_global(
     return KuramotoSimResult(t=t, theta=out)
 
 
-# ---- Backward-compatible alias (if other code uses EM naming) ----
 def simulate_kuramoto_em(
     omega: np.ndarray,
     K: float,
@@ -158,7 +153,7 @@ def simulate_kuramoto_em(
     theta0: Optional[np.ndarray] = None,
     wrap: bool = True,
 ) -> KuramotoSimResult:
-    """Alias for simulate_kuramoto_global (kept for backward compatibility)."""
+    """Backward-compatible alias for simulate_kuramoto_global."""
     return simulate_kuramoto_global(
         omega=omega,
         K=K,
@@ -171,3 +166,4 @@ def simulate_kuramoto_em(
         theta0=theta0,
         wrap=wrap,
     )
+PY
