@@ -1,0 +1,50 @@
+{
+  "title": "Noetiko Convergence",
+  "upload_type": "software",
+  "description": "Noetiko Convergence is a Python toolkit for reproducible analysis and simulation of phase synchronization under noise, with a focus on scientifically auditable metrics, surrogate testing, and clear reporting artifacts for open science workflows.\n\nThis repository is the software companion to the Noetiko Convergence paper series on Zenodo (Paper I–IV).",
+  "creators": [
+    {
+      "name": "Kappe, André",
+      "orcid": "0009-0001-2799-379X",
+      "affiliation": "Noetiko Research Division, Cologne, Germany"
+    }
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "phase synchronization",
+    "Kuramoto model",
+    "stochastic dynamics",
+    "surrogate data",
+    "reproducibility",
+    "open science",
+    "metastability",
+    "coordination dynamics"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.18379906",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    },
+    {
+      "identifier": "10.5281/zenodo.18379950",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    },
+    {
+      "identifier": "10.5281/zenodo.18379991",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    },
+    {
+      "identifier": "10.5281/zenodo.18384275",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    }
+  ],
+  "notes": "Software code is licensed under Apache-2.0. Papers are released on Zenodo under CC BY 4.0."
+}
