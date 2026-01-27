@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 
@@ -12,9 +12,9 @@ class KuramotoSimResult:
 
     Attributes
     ----------
-    t:
+    t
         Time grid, shape (n_steps,).
-    theta:
+    theta
         Phase trajectories, shape (n_osc, n_steps).
         Time runs along axis=1 (matches common signal conventions).
     """
@@ -24,23 +24,24 @@ class KuramotoSimResult:
 
 
 def order_parameter(theta: np.ndarray, *, axis: int = 0) -> np.ndarray:
-    """Compute the Kuramoto complex order parameter.
+    """Compute the Kuramoto complex order parameter R.
+
+    R = (1/N) * sum_j exp(1j * theta_j)
 
     Parameters
     ----------
-    theta:
-        Phases. Supported shapes:
-        - (n_osc,) -> returns scalar complex (0-d array)
-        - (n_osc, n_steps) -> returns (n_steps,) complex if axis=0
-        - (n_steps, n_osc) -> returns (n_steps,) complex if axis=1
-    axis:
+    theta
+        Phases. Common shapes:
+        - (n_osc,) -> returns complex scalar (0-d array / complex)
+        - (n_osc, n_steps) with axis=0 -> returns (n_steps,) complex
+        - (n_steps, n_osc) with axis=1 -> returns (n_steps,) complex
+    axis
         Axis along which oscillators are arranged.
 
     Returns
     -------
     np.ndarray
-        Complex order parameter R = (1/N) * sum(exp(1j * theta)).
-        Magnitude |R| is the order parameter r, angle is mean phase psi.
+        Complex order parameter(s). Magnitude |R| is r(t), angle is mean phase ψ(t).
     """
     th = np.asarray(theta, dtype=float)
     return np.mean(np.exp(1j * th), axis=axis)
@@ -66,13 +67,15 @@ def simulate_kuramoto_global(
 ) -> KuramotoSimResult:
     """Euler–Maruyama simulation of globally-coupled noisy Kuramoto model.
 
-    Model:
-        dθ_i = [ ω_i + (K/N) Σ_j sin(θ_j - θ_i) ] dt + sqrt(2D) dW_i
+    Model
+    -----
+    dθ_i = [ ω_i + (K/N) Σ_j sin(θ_j - θ_i) ] dt + sqrt(2D) dW_i
 
     Notes
     -----
     - Accepts both `n_steps` (preferred) and `steps` (alias).
     - RNG precedence: if `rng` is given it is used; else `seed` is used.
+    - Output theta is stored as (n_osc, n_steps).
 
     Returns
     -------
@@ -86,7 +89,7 @@ def simulate_kuramoto_global(
         raise ValueError("If both provided, `n_steps` and `steps` must match.")
     n_steps_final = int(n_steps if n_steps is not None else steps)  # type: ignore[arg-type]
 
-    # --- validate ---
+    # --- validate scalars ---
     if dt <= 0:
         raise ValueError("dt must be > 0.")
     if n_steps_final < 2:
@@ -127,9 +130,9 @@ def simulate_kuramoto_global(
         psi = float(np.angle(R))
 
         drift = w + K * r * np.sin(psi - theta)
+
         if sqrt_2Ddt > 0:
-            noise = sqrt_2Ddt * rng.standard_normal(size=n)
-            theta = theta + drift * dt + noise
+            theta = theta + drift * dt + sqrt_2Ddt * rng.standard_normal(size=n)
         else:
             theta = theta + drift * dt
 
@@ -141,7 +144,7 @@ def simulate_kuramoto_global(
     return KuramotoSimResult(t=t, theta=out)
 
 
-# ---- Backward-compatible alias (if other code/tests use EM naming) ----
+# ---- Backward-compatible alias (if other code uses EM naming) ----
 def simulate_kuramoto_em(
     omega: np.ndarray,
     K: float,
@@ -155,6 +158,7 @@ def simulate_kuramoto_em(
     theta0: Optional[np.ndarray] = None,
     wrap: bool = True,
 ) -> KuramotoSimResult:
+    """Alias for simulate_kuramoto_global (kept for backward compatibility)."""
     return simulate_kuramoto_global(
         omega=omega,
         K=K,
