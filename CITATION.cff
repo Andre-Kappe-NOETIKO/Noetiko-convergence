@@ -26,6 +26,20 @@ keywords:
   - "coordination dynamics"
 version: "0.1.1"
 
+# Optional aber empfehlenswert: Veröffentlichungsdatum der Software (Zenodo-Release-Datum).
+# Wenn dein Release am 2026-01-27 war, passt das so:
+date-released: "2026-01-27"
+
+# Zenodo Software DOIs:
+# - doi: idealerweise versionsspezifisch (exakte Referenz)
+# - identifiers: zusätzlich Concept DOI (zeigt auf latest)
+doi: "10.5281/zenodo.18394099"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.18394098"
+  - type: url
+    value: "https://doi.org/10.5281/zenodo.18394098"
+
 preferred-citation:
   type: software
   title: "Noetiko Convergence"
@@ -34,10 +48,12 @@ preferred-citation:
       given-names: "André"
       orcid: "https://orcid.org/0009-0001-2799-379X"
       affiliation: "Noetiko Research Division, Cologne, Germany"
+  year: 2026
+  doi: "10.5281/zenodo.18394099"
+  url: "https://doi.org/10.5281/zenodo.18394099"
+  version: "0.1.1"
   license: "Apache-2.0"
   repository-code: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
-  url: "https://github.com/Andre-Kappe-NOETIKO/Noetiko-convergence"
-  version: "0.1.1"
 
 references:
   - type: article
