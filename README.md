@@ -19,7 +19,7 @@ a reproducibility-first protocol stack for metastable information and coordinati
 - **Paper IV (Synthesis) — Noetiko Convergence: A Conservative, Falsifiable Framework for Metastable Information and Coordination in Open Systems (Synthesis)**  
   DOI: https://doi.org/10.5281/zenodo.18384275
 
-  ![CI](...dein-ci-badge...)
+![CI](...dein-ci-badge...)
 [![DOI](https://zenodo.org/badge/1141050935.svg)](https://doi.org/10.5281/zenodo.18394098)
 
 ---
