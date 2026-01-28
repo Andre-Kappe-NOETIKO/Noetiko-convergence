@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import argparse
+import json
+import os
+from pathlib import Path
+
 import numpy as np
 
 from .kuramoto import order_parameter, simulate_kuramoto_global
 from .phase import compute_phases_multichannel
-from .quality_gates import (
-    consistency_gate,
-    robustness_gate,
-    spectral_gate,
-)
+from .quality_gates import consistency_gate, robustness_gate, spectral_gate
 from .surrogates import phase_randomization_multichannel, time_shift_surrogate
 
 
@@ -27,9 +28,20 @@ def run_demo(seed: int = 0) -> dict[str, float]:
     rng = np.random.default_rng(seed)
 
     # synthetic phases via Kuramoto (stand-in for any multichannel dataset)
-    N = 12
-    omega = rng.normal(loc=0.0, scale=0.8, size=N)
-    theta = simulate_kuramoto_global(omega, K=1.7, D=0.08, dt=0.02, steps=2500, seed=seed)
+    n_osc = 12
+    omega = rng.normal(loc=0.0, scale=0.8, size=n_osc)
+
+    sim = simulate_kuramoto_global(
+        omega,
+        K=1.7,
+        D=0.08,
+        dt=0.02,
+        steps=2500,
+        seed=seed,
+    )
+
+    # `simulate_kuramoto_global` returns KuramotoSimResult(t, theta)
+    theta = sim.theta  # (n_osc, n_steps)
 
     # create synthetic observables x_i(t) from phases (cosine projection + noise)
     X = np.cos(theta) + 0.12 * rng.standard_normal(size=theta.shape)
@@ -67,3 +79,49 @@ def run_demo(seed: int = 0) -> dict[str, float]:
         "sep_phase_rand": sep_pr,
         "sep_time_shift": sep_ts,
     }
+
+
+def _configure_outdir(out: Path) -> Path:
+    """
+    Create output directory and publish it via env var so other modules
+    can respect it without changing many function signatures.
+    """
+    out = out.expanduser().resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    os.environ["NOETIKO_OUTDIR"] = str(out)
+    return out
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="python -m noetiko_convergence.demo")
+    parser.add_argument("--seed", type=int, default=0, help="RNG seed (default: 0)")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=Path("results/demo"),
+        help="Output directory (default: results/demo)",
+    )
+    parser.add_argument(
+        "--write-summary",
+        action="store_true",
+        help="Write demo_summary.json into --out",
+    )
+    args = parser.parse_args(argv)
+
+    out = _configure_outdir(args.out)
+
+    summary = run_demo(seed=args.seed)
+
+    if args.write_summary:
+        (out / "demo_summary.json").write_text(
+            json.dumps(summary, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    # Keep stdout machine-friendly
+    print(json.dumps(summary))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
